@@ -7,6 +7,7 @@ from airflow.utils.dates import days_ago
 from airflow.operators.python_operator import PythonOperator
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.utils.task_group import TaskGroup
+from airflow.operators.empty import EmptyOperator
 
 
 HEADERS = {
@@ -25,8 +26,11 @@ DWH_CONN = {
     'password': 'jovyan',
 }
 
+DATA_TYPES = ['restaurants', 'couriers', 'deliveries']
+
+
 def get_data(data_type, **context):
-    
+
     offset = 0
     data = []
 
@@ -44,32 +48,36 @@ def get_data(data_type, **context):
             break
         data.extend(response.json())
         offset += 50
-    
+
     with psycopg2.connect(**DWH_CONN) as conn:
         cur = conn.cursor()
         query = f"""
-                INSERT INTO stg.{data_type} (object_value, update_ts) VALUES (%s, %s)
+                INSERT INTO stg.{data_type} (object_value, update_ts)
+                VALUES (%s, %s)
                 ON CONFLICT (update_ts)
                 DO UPDATE SET object_value = EXCLUDED.object_value;
                 """
-        cur.execute(query, (json.dumps(data, ensure_ascii=False), context['ds']))
+        cur.execute(
+            query,
+            (json.dumps(data, ensure_ascii=False), context['ds'])
+        )
         conn.commit()
-            
 
-data_type = ['restaurants', 'couriers', 'deliveries']
 
 with DAG(
     dag_id='deliveries_dag',
     default_args={'owner': 'xxxRichiexxx'},
-    schedule_interval='@daily', 
+    schedule_interval='@daily',
     start_date=days_ago(1)
 ) as dag:
+
+    start = EmptyOperator(task_id="start")
 
     with TaskGroup("STAGE") as stage:
 
         get_data_tasks = []
 
-        for item in data_type:
+        for item in DATA_TYPES:
             get_data_tasks.append(
                 PythonOperator(
                     task_id=f'get_{item}',
@@ -77,7 +85,8 @@ with DAG(
                     op_kwargs={'data_type': item}
                 )
             )
-    with TaskGroup("DDS-pt1") as dds_pt1:   
+
+    with TaskGroup("DDS-pt1") as dds_pt1:
         update_couriers = PostgresOperator(
             task_id='update_dds_couriers',
             postgres_conn_id='DWH',
@@ -92,7 +101,8 @@ with DAG(
 
         [update_couriers, update_calendar]
 
-    with TaskGroup("DDS-pt2") as dds_pt2:  
+    with TaskGroup("DDS-pt2") as dds_pt2:
+
         update_orders = PostgresOperator(
             task_id='update_dds_orders',
             postgres_conn_id='DWH',
@@ -110,8 +120,9 @@ with DAG(
     update_mart = PostgresOperator(
             task_id='update_mart',
             postgres_conn_id='DWH',
-            sql="sql/update_cdm_dm_courier_ledger.sql"
+            sql="sql/update_cdm_dm_courier_ledger.sql",
         )
-    stage >> dds_pt1 >> dds_pt2 >> update_mart
 
+    end = EmptyOperator(task_id="end")
 
+    start >> stage >> dds_pt1 >> dds_pt2 >> update_mart >> end

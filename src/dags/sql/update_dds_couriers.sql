@@ -1,7 +1,7 @@
 WITH sq AS(
 SELECT 
-	json_array_elements_text(object_value::json)::json -> '_id' AS id,
-	json_array_elements_text(object_value::json)::json -> 'name' AS name
+	json_array_elements_text(object_value::json)::json -> '_id'     AS id,
+	json_array_elements_text(object_value::json)::json -> 'name'    AS name
 FROM stg.couriers
 WHERE update_ts = '{{ds}}'
 )

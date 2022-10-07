@@ -1,6 +1,6 @@
 WITH sq1 AS(
 SELECT 
-	(json_array_elements_text(object_value::json)::json -> 'order_ts')::text AS ts
+	(json_array_elements_text(object_value::json)::json -> 'order_ts')::text    AS ts
 FROM stg.deliveries
 WHERE update_ts = '{{ds}}'
 UNION

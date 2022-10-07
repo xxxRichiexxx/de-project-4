@@ -32,7 +32,9 @@ CREATE TABLE cdm.dm_courier_ledger (
     order_processing_fee real NOT NULL,
     courier_order_sum real NOT NULL,
     courier_tips_sum real NOT NULL,
-    courier_reward_sum real NOT NULL
+    courier_reward_sum real NOT null,
+    
+  	constraint dm_courier_ledger_unique UNIQUE(courier_id, settlement_year, settlement_month)
 );
 
 -- DDS --
