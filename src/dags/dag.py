@@ -8,22 +8,22 @@ from airflow.operators.python_operator import PythonOperator
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.utils.task_group import TaskGroup
 from airflow.operators.empty import EmptyOperator
+from airflow.hooks.base import BaseHook
 
 
-HEADERS = {
-    'X-API-KEY': '25c27781-8fde-4b30-a22e-524044a7580f',
-    'X-Nickname': 'xxxRichiexxx',
-    'X-Cohort': '05'
-}
+api_conn = BaseHook.get_connection('API')
+dwh_conn = BaseHook.get_connection('DWH')
 
-URL = 'https://d5d04q7d963eapoepsqr.apigw.yandexcloud.net/'
+HEADERS = json.loads(api_conn.extra)
+
+URL = api_conn.host
 
 DWH_CONN = {
-    'host': 'localhost',
-    'port': 5432,
+    'host': dwh_conn.host,
+    'port': dwh_conn.port,
     'dbname': 'de',
-    'user': 'jovyan',
-    'password': 'jovyan',
+    'user': dwh_conn.login,
+    'password': dwh_conn.password,
 }
 
 DATA_TYPES = ['restaurants', 'couriers', 'deliveries']

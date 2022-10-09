@@ -1,18 +1,18 @@
 -- STAGE --
 
-CREATE TABLE stg.restaurants (
+CREATE TABLE IF NOT EXISTS stg.restaurants (
     id INT GENERATED ALWAYS AS IDENTITY,
     object_value VARCHAR NOT NULL,
     update_ts timestamp NOT NULL unique
 );
 
-CREATE TABLE stg.couriers (
+CREATE TABLE IF NOT EXISTS stg.couriers (
     id INT GENERATED ALWAYS AS IDENTITY,
     object_value VARCHAR NOT NULL,
     update_ts timestamp NOT NULL unique
 );
 
-CREATE TABLE stg.deliveries (
+CREATE TABLE IF NOT EXISTS stg.deliveries (
     id INT GENERATED ALWAYS AS IDENTITY,
     object_value text NOT NULL,
     update_ts timestamp NOT NULL unique
@@ -20,7 +20,7 @@ CREATE TABLE stg.deliveries (
 
 -- CDM --
 
-CREATE TABLE cdm.dm_courier_ledger (
+CREATE TABLE IF NOT EXISTS cdm.dm_courier_ledger (
     id INT GENERATED ALWAYS AS IDENTITY,
     courier_id INT NOT NULL,
     courier_name VARCHAR NOT NULL,
@@ -38,13 +38,13 @@ CREATE TABLE cdm.dm_courier_ledger (
 );
 -- DDS --
 
-CREATE TABLE dds.couriers(
+CREATE TABLE IF NOT EXISTS dds.couriers(
     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     object_id VARCHAR NOT NULL UNIQUE,
     name VARCHAR NOT NULL
 );
 
-CREATE TABLE dds.calendar(
+CREATE TABLE IF NOT EXISTS dds.calendar(
     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     year INT NOT NULL,
     month INT NOT NULL CHECK("month" >= 1 AND "month" <= 12),
@@ -54,14 +54,14 @@ CREATE TABLE dds.calendar(
 
 );
 
-CREATE TABLE dds.orders(
+CREATE TABLE IF NOT EXISTS dds.orders(
     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     object_id VARCHAR NOT NULL UNIQUE,
     calendar_id INT NOT NULL REFERENCES dds.calendar(id),
     "sum" real NOT NULL CHECK ("sum" >= 0)
 );
 
-CREATE TABLE dds.deliveries(
+CREATE TABLE IF NOT EXISTS dds.deliveries(
     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     object_id VARCHAR NOT NULL UNIQUE,
     order_id INT NOT NULL REFERENCES dds.orders(id),
